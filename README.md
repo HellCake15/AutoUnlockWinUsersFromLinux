@@ -40,7 +40,7 @@ sudo ./chntpw
 
 
 
-# AutoMountWindows — Сброс пароля Windows из Linux (C# обертка над `chntpw`)
+# AutoUnlockWinUsersFromLinux — Сброс пароля Windows из Linux (C# обертка над `chntpw`)
 
 # 🇷🇺 Русская Версия
 
