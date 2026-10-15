@@ -1,0 +1,14 @@
+/home/hellcak15/Документы/progs/chntpw/bin/Debug/net10.0/chntpw
+/home/hellcak15/Документы/progs/chntpw/bin/Debug/net10.0/chntpw.deps.json
+/home/hellcak15/Документы/progs/chntpw/bin/Debug/net10.0/chntpw.runtimeconfig.json
+/home/hellcak15/Документы/progs/chntpw/bin/Debug/net10.0/chntpw.dll
+/home/hellcak15/Документы/progs/chntpw/bin/Debug/net10.0/chntpw.pdb
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.GeneratedMSBuildEditorConfig.editorconfig
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.AssemblyInfoInputs.cache
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.AssemblyInfo.cs
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.csproj.CoreCompileInputs.cache
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.dll
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/refint/chntpw.dll
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.pdb
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/chntpw.genruntimeconfig.cache
+/home/hellcak15/Документы/progs/chntpw/obj/Debug/net10.0/ref/chntpw.dll

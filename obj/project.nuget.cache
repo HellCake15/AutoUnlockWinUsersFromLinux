@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "YLrU9kXUCrg=",
+  "success": true,
+  "projectFilePath": "/home/hellcak15/Документы/progs/chntpw/chntpw.csproj",
+  "expectedPackageFiles": [
+    "/home/hellcak15/.nuget/packages/microsoft.dotnet.ilcompiler/10.0.12/microsoft.dotnet.ilcompiler.10.0.12.nupkg.sha512",
+    "/home/hellcak15/.nuget/packages/microsoft.net.illink.tasks/10.0.12/microsoft.net.illink.tasks.10.0.12.nupkg.sha512",
+    "/home/hellcak15/.nuget/packages/microsoft.aspnetcore.app.ref/10.0.12/microsoft.aspnetcore.app.ref.10.0.12.nupkg.sha512",
+    "/home/hellcak15/.nuget/packages/runtime.linux-x64.microsoft.dotnet.ilcompiler/10.0.12/runtime.linux-x64.microsoft.dotnet.ilcompiler.10.0.12.nupkg.sha512"
+  ],
+  "logs": []
+}
