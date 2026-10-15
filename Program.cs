@@ -20,18 +20,18 @@ namespace Program
 
         static void Main()
         {
-            Console.WriteLine("Проверка и установка пакетов ntfs-3g и chntpw...");
+            Console.WriteLine("Checking and installing ntfs-3g and chntpw packages...");
             var (pacmanOutput, pacmanExitCode) = RunCommand("sudo", "pacman -Sy --noconfirm --needed ntfs-3g chntpw");
 
             if (pacmanExitCode != 0)
             {
-                Console.WriteLine($"Ошибка при установке пакетов (код {pacmanExitCode}):\n{pacmanOutput}");
+                Console.WriteLine($"Error installing packages (exit code {pacmanExitCode}):\n{pacmanOutput}");
                 return;
             }
 
             string mountPoint = "/mnt";
-            
-            Console.WriteLine("\nПоиск всех NTFS-разделов...");
+
+            Console.WriteLine("\nSearching for all unmounted NTFS partitions...");
             var (lsblkOutput, _) = RunCommand("lsblk", "-r -n -o PATH,FSTYPE,MOUNTPOINT");
 
             List<string> ntfsPartitions = new List<string>();
@@ -40,7 +40,7 @@ namespace Program
             {
                 var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                // Берем несмонтированные разделы ntfs
+                // Pick only unmounted NTFS partitions
                 if (parts.Length == 2 && parts[1].Equals("ntfs", StringComparison.OrdinalIgnoreCase))
                 {
                     ntfsPartitions.Add(parts[0]);
@@ -49,17 +49,17 @@ namespace Program
 
             if (ntfsPartitions.Count == 0)
             {
-                Console.WriteLine("Свободные NTFS-разделы не найдены.");
+                Console.WriteLine("No unmounted NTFS partitions found.");
                 return;
             }
 
-            Console.WriteLine($"Найдено NTFS-разделов для проверки: {ntfsPartitions.Count} ({string.Join(", ", ntfsPartitions)})");
+            Console.WriteLine($"Found NTFS partitions to check: {ntfsPartitions.Count} ({string.Join(", ", ntfsPartitions)})");
 
             string? foundWindowsPartition = null;
 
             foreach (var partition in ntfsPartitions)
             {
-                Console.WriteLine($"\n--- Проверка раздела {partition} ---");
+                Console.WriteLine($"\n--- Checking partition {partition} ---");
 
                 var (roOutput, roExitCode) = RunCommand("sudo", $"mount -o ro {partition} {mountPoint}");
 
@@ -70,119 +70,118 @@ namespace Program
 
                     if (roExitCode != 0)
                     {
-                        Console.WriteLine($"Не удалось открыть {partition}: {roOutput}. Пропускаем...");
+                        Console.WriteLine($"Failed to open {partition}: {roOutput}. Skipping...");
                         continue;
                     }
                 }
 
                 if (IsWindowsSystemPartition(mountPoint))
                 {
-                    Console.WriteLine($"[+] Отлично! На разделе {partition} найдена система Windows!");
+                    Console.WriteLine($"[+] Great! Windows installation found on {partition}!");
                     RunCommand("sudo", $"umount -lf {mountPoint}");
                     foundWindowsPartition = partition;
                     break;
                 }
                 else
                 {
-                    Console.WriteLine($"[-] На разделе {partition} нет папок Windows/System32. Ищем дальше...");
+                    Console.WriteLine($"[-] No Windows/System32 directories on {partition}. Searching next...");
                     RunCommand("sudo", $"umount -lf {mountPoint}");
                 }
             }
 
             if (foundWindowsPartition == null)
             {
-                Console.WriteLine("\nНи на одном из NTFS-разделов не обнаружена установленная Windows.");
+                Console.WriteLine("\nNo Windows installation found on any of the NTFS partitions.");
                 return;
             }
 
-            // Монтируем раздел на запись (сначала чистим флаг грязного тома через ntfsfix -d на случай Быстрого запуска)
-            Console.WriteLine($"\nПодготовка и монтирование системного раздела {foundWindowsPartition} в режиме RW...");
+            // Mount the partition as read-write (clear the dirty volume flag via ntfsfix -d first in case of Fast Startup)
+            Console.WriteLine($"\nPreparing and mounting system partition {foundWindowsPartition} in RW mode...");
             RunCommand("sudo", $"ntfsfix -d {foundWindowsPartition}");
 
             var (mountOutput, mountExitCode) = RunCommand("sudo", $"mount -o rw {foundWindowsPartition} {mountPoint}");
 
             if (mountExitCode != 0)
             {
-                // Запасной вариант через ntfs-3g с удалением гибернации
+                // Fallback using ntfs-3g with hibernation file removal
                 (mountOutput, mountExitCode) = RunCommand("sudo", $"mount -t ntfs-3g -o remove_hiberfile,rw {foundWindowsPartition} {mountPoint}");
                 if (mountExitCode != 0)
                 {
-                    Console.WriteLine($"Ошибка при монтировании (код {mountExitCode}):\n{mountOutput}");
+                    Console.WriteLine($"Error mounting partition (exit code {mountExitCode}):\n{mountOutput}");
                     return;
                 }
             }
 
-            Console.WriteLine($"УСПЕХ! Диск с Windows ({foundWindowsPartition}) смонтирован в {mountPoint}");
+            Console.WriteLine($"SUCCESS! Windows drive ({foundWindowsPartition}) mounted at {mountPoint}");
 
             try
             {
                 string? samPath = FindSamFilePath(mountPoint);
                 if (samPath == null)
                 {
-                    Console.WriteLine("Ошибка: файл SAM не найден!");
+                    Console.WriteLine("Error: SAM file not found!");
                     return;
                 }
 
-                // 1. Получаем список пользователей
+                // 1. Get the list of all users
                 var listResult = RunCommand("sudo", $"chntpw -l \"{samPath}\"");
                 var allUsers = ParseUser(listResult.Output);
 
-                var adminUsers = allUsers.Where(u => u.IsAdmin).ToList();
-
-                if (adminUsers.Count == 0)
+                if (allUsers.Count == 0)
                 {
-                    Console.WriteLine("Не найдено пользователей с правами администратора.");
+                    Console.WriteLine("No users found in the SAM file.");
                     Console.WriteLine(listResult.Output);
                     return;
                 }
 
-                Console.WriteLine("\nНайдены пользователи с правами администратора:");
-                for (int i = 0; i < adminUsers.Count; i++)
+                Console.WriteLine("\nFound Windows user accounts:");
+                for (int i = 0; i < allUsers.Count; i++)
                 {
-                    string status = adminUsers[i].IsLocked ? "[Отключен]" : "[Активен]";
-                    Console.WriteLine($"{i + 1}. {adminUsers[i].Username} (RID: {adminUsers[i].RID}) {status}");
+                    string role = allUsers[i].IsAdmin ? "[ADMIN]" : "[USER]";
+                    string status = allUsers[i].IsLocked ? "[Disabled/Locked]" : "[Active]";
+                    Console.WriteLine($"{i + 1}. {allUsers[i].Username} (RID: {allUsers[i].RID}) {role} {status}");
                 }
 
-                Console.Write("\nВведите номер пользователя, для которого хотите сбросить пароль: ");
-                if (!int.TryParse(Console.ReadLine(), out int choice) || choice < 1 || choice > adminUsers.Count)
+                Console.Write("\nEnter the number of the user whose password you want to reset: ");
+                if (!int.TryParse(Console.ReadLine(), out int choice) || choice < 1 || choice > allUsers.Count)
                 {
-                    Console.WriteLine("Неверный ввод. Завершение программы.");
+                    Console.WriteLine("Invalid input. Exiting program.");
                     return;
                 }
 
-                SamUser selectedUser = adminUsers[choice - 1];
-                Console.WriteLine($"\nОбработка аккаунта: {selectedUser.Username} (RID: 0x{selectedUser.RID})...");
+                SamUser selectedUser = allUsers[choice - 1];
+                Console.WriteLine($"\nProcessing account: {selectedUser.Username} (RID: 0x{selectedUser.RID})...");
 
-                // 2. Формируем команды для флага -u 0xRID (ровно как в твоем терминале!)
+                // 2. Build commands for the -u 0xRID flag
                 string commands = "";
 
                 if (selectedUser.IsLocked)
                 {
-                    Console.WriteLine("-> Аккаунт отключен. Включаем его (команда 2)...");
+                    Console.WriteLine("-> Account is disabled/locked. Enabling it (command 2)...");
                     commands += "2\n";
                 }
 
-                Console.WriteLine("-> Сбрасываем пароль (команда 1) и сохраняем (q -> y)...");
+                Console.WriteLine("-> Clearing password (command 1) and saving changes (q -> y)...");
                 commands += "1\nq\ny\n";
 
-                // Важно: запускаем с флагом -u 0xRID (тогда кириллица в имени "Администратор" не мешает!)
+                // Run with -u 0xRID so non-ASCII characters in usernames don't cause issues
                 var resetResult = RunCommand("sudo", $"chntpw -u 0x{selectedUser.RID} \"{samPath}\"", commands);
 
                 if (resetResult.Output.Contains("<SAM> - OK") || resetResult.Output.Contains("Password cleared"))
                 {
-                    Console.WriteLine($"\n[ГОТОВО] Пароль для пользователя {selectedUser.Username} успешно сброшен!");
+                    Console.WriteLine($"\n[DONE] Password for user {selectedUser.Username} has been successfully reset!");
                 }
                 else
                 {
-                    Console.WriteLine($"\nНе удалось сбросить пароль. Вывод chntpw:\n{resetResult.Output}");
+                    Console.WriteLine($"\nFailed to reset password. chntpw output:\n{resetResult.Output}");
                 }
             }
             finally
             {
-                Console.WriteLine("\nСинхронизация диска и размонтирование...");
+                Console.WriteLine("\nSyncing disk and unmounting...");
                 RunCommand("sync", "");
                 RunCommand("sudo", $"umount {mountPoint}");
-                Console.WriteLine("Диск безопасно размонтирован.");
+                Console.WriteLine("Drive safely unmounted.");
             }
         }
 

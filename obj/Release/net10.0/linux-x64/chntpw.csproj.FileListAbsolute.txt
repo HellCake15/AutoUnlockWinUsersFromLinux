@@ -199,3 +199,4 @@
 /home/hellcak15/Документы/progs/chntpw/obj/Release/net10.0/linux-x64/chntpw.pdb
 /home/hellcak15/Документы/progs/chntpw/obj/Release/net10.0/linux-x64/chntpw.genruntimeconfig.cache
 /home/hellcak15/Документы/progs/chntpw/obj/Release/net10.0/linux-x64/ref/chntpw.dll
+/home/hellcak15/Документы/progs/chntpw/obj/Release/net10.0/linux-x64/chntpw.sourcelink.json

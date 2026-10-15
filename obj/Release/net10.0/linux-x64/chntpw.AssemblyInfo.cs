@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("chntpw")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4cdf2c25e29a6ff992203ae44d0d48c2b1f1cd44")]
 [assembly: System.Reflection.AssemblyProductAttribute("chntpw")]
 [assembly: System.Reflection.AssemblyTitleAttribute("chntpw")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
